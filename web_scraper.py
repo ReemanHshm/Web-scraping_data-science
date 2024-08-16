@@ -35,7 +35,7 @@ class SitemapParser:
         except Exception as e:
             print(f"Failed to parse sitemaps: {e}")
             return []
-
+    
     # Method to extract article URLs from a given monthly sitemap URL
     def extract_article_urls(self, monthly_sitemap_url: str) -> List[str]:
         try:
@@ -58,28 +58,49 @@ class ArticleScraper:
         try:
             response = self.session.get(url)
             response.raise_for_status()
-            soup = BeautifulSoup(response.text, 'html.parser')
 
-            # Extract metadata from the JSON-encoded <script> tag
-            metadata_script = soup.find('script', type='application/ld+json')
-            metadata = json.loads(metadata_script.string) if metadata_script else {}
+            # Use the new parse_article method to extract metadata and full text
+            article_data = self.parse_article(response.text)
 
             # Create an Article object with the extracted metadata and content
             article = Article(
                 url=url,
-                post_id=metadata.get('post_id'),
-                title=metadata.get('headline'),
-                keywords=metadata.get('keywords'),
-                thumbnail=metadata.get('image'),
-                publication_date=metadata.get('datePublished'),
-                last_updated_date=metadata.get('dateModified'),
-                author=metadata.get('author', {}).get('name') if metadata.get('author') else None,
-                content=' '.join(p.get_text() for p in soup.find_all('p'))  # Combine text from all <p> tags
+                post_id=article_data["metadata"].get('post_id'),
+                title=article_data["metadata"].get('headline'),
+                keywords=article_data["metadata"].get('keywords'),
+                thumbnail=article_data["metadata"].get('image'),
+                publication_date=article_data["metadata"].get('datePublished'),
+                last_updated_date=article_data["metadata"].get('dateModified'),
+                author=article_data["metadata"].get('author', {}).get('name') if article_data["metadata"].get('author') else None,
+                content=article_data["full_text"]  # Use the captured full text
             )
             return article
         except Exception as e:
             print(f"Failed to scrape article at {url}: {e}")
             return None
+
+    # Method to parse the article's HTML and extract metadata and full text
+    def parse_article(self, html):
+        soup = BeautifulSoup(html, "lxml")
+
+        # Extract metadata from the <script> tag containing text/tawsiyat
+        metadata = {}
+        script_tags = soup.find_all("script")
+        for script in script_tags:
+            if 'text/tawsiyat' in script.get('type', ''):
+                try:
+                    metadata = json.loads(script.string)
+                except (json.JSONDecodeError, TypeError):
+                    print("Error decoding JSON from script tag.")
+
+        # Capture full article text from <p> tags
+        paragraphs = soup.find_all("p")
+        full_text = "\n".join(paragraph.get_text() for paragraph in paragraphs)
+
+        return {
+            "metadata": metadata,
+            "full_text": full_text
+        }
 
 # Class for handling file operations, such as saving articles to JSON
 class FileUtility:
@@ -142,7 +163,7 @@ def main():
         # Save articles to JSON
         file_utility.save_to_json(articles, year, month)
 
-    print(f"Successfull scraping {total_articles_scraped} articles.")
+    print(f"Successfully scraped {total_articles_scraped} articles.")
 
 # Entry point of the script
 if __name__ == "__main__":
