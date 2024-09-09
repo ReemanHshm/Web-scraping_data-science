@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Recent Articles</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> <!-- Include jQuery -->
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Recent Articles</h1>
+    <table id="articlesTable">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Publication Date</th>
+                <th>Keywords</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Table rows will be dynamically inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        $(document).ready(function() {
+            // Fetch data from Flask API
+            $.getJSON("/recent_articles", function(data) {
+                // Populate table
+                var tableBody = $("#articlesTable tbody");
+                data.forEach(function(article) {
+                    var row = $("<tr></tr>");
+                    row.append($("<td></td>").text(article.title));
+                    row.append($("<td></td>").text(article.published_time));
+                    row.append($("<td></td>").text(article.keywords.join(", ")));
+                    tableBody.append(row);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

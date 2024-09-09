@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Articles by Thumbnail Presence</title>
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+    <style>
+        #chartdiv {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chartdiv"></div>
+
+    <script>
+        am5.ready(function() {
+
+            var root = am5.Root.new("chartdiv");
+
+            // Set themes
+            root.setThemes([
+                am5themes_Animated.new(root)
+            ]);
+
+            // Define custom color set
+            var colorSet = am5.ColorSet.new(root, {
+                colors: [
+                    am5.color("#007BFF"),  // Dark blue for "With Thumbnail"
+                    am5.color("#FFC107")   // Yellow for "Without Thumbnail"
+                ],
+                passOptions: {
+                    lightness: 0.1,
+                    brightness: -0.1
+                }
+            });
+
+            // Create chart
+            var chart = root.container.children.push(
+                am5percent.PieChart.new(root, {
+                    layout: root.verticalLayout
+                })
+            );
+
+            // Create series
+            var series = chart.series.push(
+                am5percent.PieSeries.new(root, {
+                    valueField: "count",
+                    categoryField: "type",
+                    colors: colorSet  // Apply custom colors
+                })
+            );
+
+            // Fetch data from API
+            fetch('/articles_with_thumbnail')
+                .then(response => response.json())
+                .then(data => {
+                    let withThumbnail = 0;
+                    let withoutThumbnail = 0;
+
+                    data.forEach(article => {
+                        if (article.thumbnail) {
+                            withThumbnail++;
+                        } else {
+                            withoutThumbnail++;
+                        }
+                    });
+
+                    const chartData = [
+                        { type: "With Thumbnail", count: withThumbnail },
+                        { type: "Without Thumbnail", count: withoutThumbnail }
+                    ];
+
+                    series.data.setAll(chartData);
+                })
+                .catch(error => console.error('Error:', error));
+
+            // Add legend
+            chart.children.push(
+                am5.Legend.new(root, {
+                    centerX: am5.p50,
+                    x: am5.p50
+                })
+            );
+
+        }); // end am5.ready()
+    </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Most Updated Articles</title>
+    <!-- Include amCharts Core and Chart libraries -->
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+</head>
+<body>
+    <h1>Most Updated Articles</h1>
+    <!-- Container for the chart -->
+    <div id="chartdiv" style="width: 100%; height: 500px;"></div>
+
+    <script>
+        am5.ready(function() {
+            var root = am5.Root.new("chartdiv");
+            var chart = root.container.children.push(
+                am5xy.XYChart.new(root, {
+                    panX: true,
+                    panY: true,
+                    wheelX: "panX",
+                    wheelY: "zoomX",
+                    pinchZoomX: true
+                })
+            );
+
+            var xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+                categoryField: "_id",
+                renderer: am5xy.AxisRendererX.new(root, {
+                    minGridDistance: 20
+                }),
+                tooltip: am5.Tooltip.new(root, {})
+            }));
+
+            xAxis.get("renderer").labels.template.setAll({
+                rotation: -45,
+                centerY: am5.p50,
+                centerX: am5.p100,
+                horizontalCenter: "right",
+                verticalCenter: "middle"
+            });
+
+            var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                renderer: am5xy.AxisRendererY.new(root, {})
+            }));
+
+            var series = chart.series.push(am5xy.ColumnSeries.new(root, {
+                name: "Update Count",
+                xAxis: xAxis,
+                yAxis: yAxis,
+                valueYField: "update_count",
+                categoryXField: "_id",
+                tooltip: am5.Tooltip.new(root, {
+                    labelText: "{categoryX}: {valueY}"
+                })
+            }));
+
+            series.columns.template.adapters.add("fill", function(fill, target) {
+                return am5.color(0x4caf50);  // Green color for bars
+            });
+
+            series.columns.template.setAll({
+                width: am5.percent(60),
+                tooltipText: "{categoryX}: {valueY}",
+                cornerRadiusBR: 5,
+                cornerRadiusTR: 5,
+                strokeWidth: 2,
+                stroke: am5.color(0x000000),
+                fillOpacity: 0.8
+            });
+
+            fetch('/most_updated_articles')
+                .then(response => response.json())
+                .then(data => {
+                    xAxis.data.setAll(data);
+                    series.data.setAll(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+
+            series.appear(1000);
+            chart.appear(1000, 100);
+        });
+    </script>
+</body>
+</html>

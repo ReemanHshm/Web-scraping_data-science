@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 10 Shortest Articles</title>
+    <!-- Include amCharts Core and Chart libraries -->
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #chartdiv {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Top 10 Shortest Articles</h1>
+    <!-- Container for the chart -->
+    <div id="chartdiv"></div>
+
+    <script>
+        am5.ready(function() {
+            var root = am5.Root.new("chartdiv");
+            var chart = root.container.children.push(
+                am5xy.XYChart.new(root, {
+                    panX: true,
+                    panY: true,
+                    wheelX: "panX",
+                    wheelY: "zoomX",
+                    pinchZoomX: true
+                })
+            );
+
+            // Add X and Y axes
+            var xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+                categoryField: "title",
+                renderer: am5xy.AxisRendererX.new(root, {
+                    minGridDistance: 20
+                }),
+                tooltip: am5.Tooltip.new(root, {})
+            }));
+
+            xAxis.get("renderer").labels.template.setAll({
+                rotation: -45,
+                centerY: am5.p50,
+                centerX: am5.p100,
+                horizontalCenter: "right",
+                verticalCenter: "middle",
+                maxWidth: 150
+            });
+
+            var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                renderer: am5xy.AxisRendererY.new(root, {})
+            }));
+
+            // Create series
+            var series = chart.series.push(am5xy.ColumnSeries.new(root, {
+                name: "Article Length",
+                xAxis: xAxis,
+                yAxis: yAxis,
+                valueYField: "word_count",
+                categoryXField: "title",
+                tooltip: am5.Tooltip.new(root, {
+                    labelText: "{categoryX}: {valueY} words"
+                })
+            }));
+
+            // Customize appearance of columns
+            series.columns.template.setAll({
+                width: am5.percent(80),
+                cornerRadiusBR: 5,
+                cornerRadiusTR: 5,
+                strokeWidth: 2,
+                tooltipText: "{categoryX}: {valueY} words",
+                minHeight: 30
+            });
+
+            // Add alternating colors to columns
+            series.columns.template.adapters.add("fill", function(fill, target) {
+                var index = target.dataItem.index;
+                return index % 2 === 0 ? am5.color(0x67b7dc) : am5.color(0xf9a825);
+            });
+
+            // Fetch data from Flask API and update chart
+            fetch('/shortest_articles')
+                .then(response => response.json())
+                .then(data => {
+                    // Convert data to fit amCharts data format
+                    const chartData = data.map((item, index) => ({
+                        title: `${item.title} (${item.word_count} words)`,
+                        word_count: item.word_count
+                    }));
+
+                    xAxis.data.setAll(chartData);
+                    series.data.setAll(chartData);
+                });
+
+            // Make chart animated
+            series.appear(1000);
+            chart.appear(1000, 100);
+        });
+    </script>
+</body>
+</html>

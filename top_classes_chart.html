@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Classes - Pie Chart</title>
+    <!-- Include amCharts Core and Chart libraries -->
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+    <style>
+        #chartdiv {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Top Classes Pie Chart</h1>
+
+    <!-- Container for the chart -->
+    <div id="chartdiv"></div>
+
+    <script>
+        am5.ready(function() {
+            // Create root element
+            var root = am5.Root.new("chartdiv");
+
+            // Set themes
+            root.setThemes([am5themes_Animated.new(root)]);
+
+            // Create chart
+            var chart = root.container.children.push(
+                am5percent.PieChart.new(root, {
+                    layout: root.verticalLayout
+                })
+            );
+
+            // Create series
+            var series = chart.series.push(
+                am5percent.PieSeries.new(root, {
+                    valueField: "count",
+                    categoryField: "_id"
+                })
+            );
+
+            // Add legend
+            chart.children.push(
+                am5.Legend.new(root, {
+                    centerX: am5.percent(50),
+                    x: am5.percent(50),
+                    marginTop: 15,
+                    marginBottom: 15
+                })
+            );
+
+            // Fetch data from Flask API
+            fetch('/top_classes')
+                .then(response => response.json())
+                .then(data => {
+                    series.data.setAll(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    alert("Failed to load data from the API.");
+                });
+
+            // Add animation
+            series.appear(1000, 100);
+        }); // end am5.ready()
+    </script>
+</body>
+</html>

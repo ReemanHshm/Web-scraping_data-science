@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Popular Keywords in Last X Days</title>
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <style>
+        #chartdiv {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Popular Keywords in Last X Days</h1>
+    <div id="chartdiv"></div>
+
+    <script>
+        am4core.ready(function () {
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
+
+            // Create chart instance
+            var chart = am4core.create("chartdiv", am4charts.XYChart);
+
+            // Create axes
+            var categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
+            categoryAxis.dataFields.category = "_id"; // This is the field for the keywords
+            categoryAxis.renderer.grid.template.location = 0;
+            categoryAxis.renderer.minGridDistance = 30;
+            categoryAxis.renderer.labels.template.rotation = 270; // Rotate the labels if needed
+
+            var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.title.text = "Count"; // Y-axis label
+
+            // Create series
+            var series = chart.series.push(new am4charts.LineSeries());
+            series.dataFields.valueY = "count"; // This is the field for the keyword counts
+            series.dataFields.categoryX = "_id"; // This is the field for the keywords
+            series.name = "Keywords";
+            series.strokeWidth = 3;
+            series.bullets.push(new am4charts.CircleBullet());
+            series.tooltipText = "{categoryX}: [bold]{valueY}[/]";
+
+            // Add cursor
+            chart.cursor = new am4charts.XYCursor();
+
+            // Add a scrollbar
+            chart.scrollbarX = new am4core.Scrollbar();
+
+            // Fetch data from the Flask API
+            const days = 20; // this value can be adjusted
+            const url = `/popular_keywords_last_X_days/${days}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    chart.data = data; // Set the chart data
+                })
+                .catch(error => console.error('Error loading data:', error));
+        }); // end am4core.ready()
+    </script>
+</body>
+</html>
