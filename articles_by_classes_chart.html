@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Articles by Classes - Plotly</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        #chartdiv {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chartdiv" style="width: 80%; margin: auto;"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/articles_by_classes')
+                .then(response => response.json())
+                .then(result => {
+                    const labels = result.map(item => item._id);
+                    const seriesData = result.map(item => ({
+                        x: labels,
+                        y: item.counts,
+                        type: 'bar',
+                        name: item._id
+                    }));
+
+                    const layout = {
+                        barmode: 'stack',
+                        xaxis: { title: 'Classes' },
+                        yaxis: { title: 'Count' }
+                    };
+
+                    Plotly.newPlot('chartdiv', seriesData, layout);
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>

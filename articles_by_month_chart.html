@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Articles Grouped by Month</title>
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+    <style>
+        #chartdiv {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Articles Grouped by Month</h1>
+    <div id="chartdiv"></div>
+
+    <script>
+        am5.ready(function() {
+            // Create root element
+            var root = am5.Root.new("chartdiv");
+
+            // Set themes
+            root.setThemes([
+                am5themes_Animated.new(root)
+            ]);
+
+            // Create chart
+            var chart = root.container.children.push(am5xy.XYChart.new(root, {
+                panX: true,
+                panY: true,
+                wheelX: "panX",
+                wheelY: "zoomX",
+                pinchZoomX: true
+            }));
+
+            // Add X and Y axes
+            var xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+                categoryField: "date",
+                renderer: am5xy.AxisRendererX.new(root, {}),
+                tooltip: am5.Tooltip.new(root, {})
+            }));
+
+            var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                renderer: am5xy.AxisRendererY.new(root, {})
+            }));
+
+            // Create series
+            var series = chart.series.push(am5xy.ColumnSeries.new(root, {
+                name: "Article Count",
+                xAxis: xAxis,
+                yAxis: yAxis,
+                valueYField: "count",
+                categoryXField: "date",
+                tooltip: am5.Tooltip.new(root, {
+                    labelText: "{categoryX}: {valueY}"
+                })
+            }));
+
+            // Set column appearance with custom color
+            series.columns.template.setAll({
+                width: am5.percent(50),
+                tooltipText: "{categoryX}: {valueY}",
+                fill: am5.color(0x00ffb5)  // Set to dark blue
+            });
+
+            // Fetch data from API and update chart
+            fetch('/articles_grouped_by_month')
+                .then(response => response.json())
+                .then(data => {
+                    const formattedData = data.map(item => ({
+                        date: `${item._id.year}-${item._id.month}`,
+                        count: item.count
+                    }));
+                    xAxis.data.setAll(formattedData);
+                    series.data.setAll(formattedData);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+
+            // Animate series
+            series.appear(1000);
+            chart.appear(1000, 100);
+        });
+    </script>
+</body>
+</html>

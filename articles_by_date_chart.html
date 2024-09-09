@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Articles by Date Chart</title>
+    <style>
+        #chart-container {
+            width: 80%;
+            height: 500px;
+            margin: auto;
+        }
+    </style>
+    <!-- Import Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div id="chart-container">
+        <div id="lineChart"></div>
+    </div>
+
+    <script>
+        // Fetch data from the endpoint
+        fetch('/articles_by_date')
+            .then(response => response.json())
+            .then(data => {
+                // Process and transform the data
+                const dates = data.map(item => item._id);
+                const counts = data.map(item => item.count);
+
+                // Initialize Plotly.js
+                var trace = {
+                    x: dates,
+                    y: counts,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    marker: { color: 'rgb(75, 192, 192)' },
+                    line: { color: 'rgb(75, 192, 192)' }
+                };
+
+                var layout = {
+                    title: 'Articles Count by Date',
+                    xaxis: { title: 'Date' },
+                    yaxis: { title: 'Count' }
+                };
+
+                Plotly.newPlot('lineChart', [trace], layout);
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Article Keyword Distribution</title>
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+    <style>
+        #chartdiv {
+            width: 100%;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chartdiv"></div>
+    <script>
+        am5.ready(function() {
+            var root = am5.Root.new("chartdiv");
+            root.setThemes([am5themes_Animated.new(root)]);
+            var chart = root.container.children.push(am5percent.PieChart.new(root, { layout: root.verticalLayout }));
+            var series = chart.series.push(am5percent.PieSeries.new(root, { valueField: "value", categoryField: "category", alignLabels: false }));
+
+            series.slices.template.setAll({ stroke: am5.color(0xffffff), strokeWidth: 2, tooltipText: "{category}: {value} articles" });
+            series.ticks.template.setAll({ forceHidden: true });
+
+            function fetchData(count) {
+                return fetch(`/articles_with_specific_keyword_count/${count}`)
+                    .then(response => response.json())
+                    .then(data => data.length)
+                    .catch(error => {
+                        console.error("Error fetching data for count " + count + ":", error);
+                        return 0;
+                    });
+            }
+
+            async function getChartData() {
+                const keywordCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                const aggregatedData = {};
+
+                for (const count of keywordCounts) {
+                    aggregatedData[`${count} keyword${count > 1 ? 's' : ''}`] = await fetchData(count);
+                }
+
+                // Fetch data for 10+ keywords
+                let count10Plus = 0;
+                for (let i = 10; i <= 50; i++) { // assuming max 50 keywords, adjust as needed
+                    count10Plus += await fetchData(i);
+                }
+                aggregatedData["10+ keywords"] = count10Plus;
+
+                // Format data for the chart
+                const chartData = Object.keys(aggregatedData).map(count => ({
+                    category: count,
+                    value: aggregatedData[count]
+                }));
+
+                series.data.setAll(chartData);
+            }
+
+            getChartData().then(() => {
+                var legend = chart.children.push(am5.Legend.new(root, { centerX: am5.p50, x: am5.p50 }));
+                legend.data.setAll(series.dataItems);
+                series.appear(1000, 100);
+            });
+        });
+    </script>
+</body>
+</html>

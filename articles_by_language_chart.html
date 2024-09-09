@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Articles by Language</title>
+    <script src="https://www.amcharts.com/lib/4/core.js"></script>
+    <script src="https://www.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> <!-- Include jQuery -->
+</head>
+<body>
+    <div id="chartdiv" style="width: 100%; height: 500px;"></div>
+    <script>
+        am4core.ready(function() {
+            // Create chart instance
+            var chart = am4core.create("chartdiv", am4charts.PieChart);
+
+            // Fetch data from Flask API
+            $.getJSON("/articles_by_language", function(data) {
+                // Process data to match amCharts format
+                var chartData = data.map(function(item) {
+                    return {
+                        language: item._id, // or you can use a mapping to human-readable names
+                        count: item.count
+                    };
+                });
+
+                // Set chart data
+                chart.data = chartData;
+
+                // Create and configure series
+                var pieSeries = chart.series.push(new am4charts.PieSeries());
+                pieSeries.dataFields.value = "count";
+                pieSeries.dataFields.category = "language";
+
+                // Add labels
+                pieSeries.labels.template.text = "{category}: {value}";
+                pieSeries.ticks.template.disabled = true;
+
+                // Add a legend
+                chart.legend = new am4charts.Legend();
+
+                // Add a title
+                chart.titles.create().text = "Articles by Language";
+
+                // Apply theme
+                chart.theme = am4themes_animated;
+            });
+        });
+    </script>
+</body>
+</html>
