@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Article Details</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    #inputContainer {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Article Details</h1>
+    <div id="inputContainer">
+      <label for="articleId">Enter Article ID:</label>
+      <input type="text" id="articleId" placeholder="e.g., 1813149">
+      <button onclick="fetchArticleDetails()">Get Details</button>
+    </div>
+    <table id="articleTable">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data will be inserted here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    function fetchArticleDetails() {
+      // Get the article ID from input
+      const postid = document.getElementById('articleId').value.trim();
+
+      if (!postid) {
+        alert('Please enter an article ID.');
+        return;
+      }
+
+      fetch(`/article_details/${postid}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.length === 0) {
+            console.error('No data found');
+            document.querySelector('#articleTable tbody').innerHTML = `
+              <tr><td colspan="2">Article not found.</td></tr>
+            `;
+            return;
+          }
+
+          // Get the first article from the response
+          const article = data[0];
+
+          // Get the table body element
+          const tbody = document.querySelector('#articleTable tbody');
+
+          // Add rows to the table
+          tbody.innerHTML = `
+            <tr><td>URL</td><td>${article.url || 'N/A'}</td></tr>
+            <tr><td>Title</td><td>${article.title || 'N/A'}</td></tr>
+            <tr><td>Keywords</td><td>${(article.keywords || []).join(', ') || 'N/A'}</td></tr>
+            <tr><td>Published Time</td><td>${article.published_time || 'N/A'}</td></tr>
+          `;
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+          document.querySelector('#articleTable tbody').innerHTML = `
+            <tr><td colspan="2">Error fetching data.</td></tr>
+          `;
+        });
+    }
+  </script>
+</body>
+</html>
