@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fetch Articles by Text</title>
+
+  <!-- amCharts 5 Libraries -->
+  <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+  <style>
+    #chartdiv {
+      width: 100%;
+      height: 500px;
+    }
+    .input-container {
+      margin-bottom: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .InputField {
+      padding: 8px;
+      font-size: 16px;
+      width: 200px;
+    }
+    .fetchButton {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .fetchButton:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Input container -->
+  <div class="input-container">
+    <input type="text" id="textInput" class="InputField" placeholder="Enter Text">
+    <button id="buttonFetchArticlesCount" class="fetchButton">Fetch Data</button>
+  </div>
+
+  <!-- Chart container -->
+  <div id="chartdiv"></div>
+
+  <script>
+    am5.ready(async function () {
+      // Create root element
+      var root = am5.Root.new("chartdiv");
+
+      // Set themes
+      root.setThemes([am5themes_Animated.new(root)]);
+
+      // Create chart
+      var chart = root.container.children.push(
+        am5xy.XYChart.new(root, {
+          panX: false,
+          panY: false,
+          wheelX: "none",
+          wheelY: "none",
+          paddingLeft: 0,
+        })
+      );
+
+      // Disable zoom button
+      chart.zoomOutButton.set("forceHidden", true);
+
+      // Create Y-axis (Category)
+      var yRenderer = am5xy.AxisRendererY.new(root, {
+        minGridDistance: 30,
+        minorGridEnabled: true,
+        inversed: true,
+      });
+      yRenderer.grid.template.set("location", 1);
+
+      var yAxis = chart.yAxes.push(
+        am5xy.CategoryAxis.new(root, {
+          maxDeviation: 0,
+          categoryField: "text",
+          renderer: yRenderer,
+          tooltip: am5.Tooltip.new(root, { themeTags: ["axis"] }),
+        })
+      );
+
+      // Create X-axis (Value)
+      var xAxis = chart.xAxes.push(
+        am5xy.ValueAxis.new(root, {
+          maxDeviation: 0,
+          min: 0,
+          numberFormatter: am5.NumberFormatter.new(root, {
+            numberFormat: "#,###a",
+          }),
+          extraMax: 0.1,
+          renderer: am5xy.AxisRendererX.new(root, {
+            strokeOpacity: 0.1,
+            minGridDistance: 80,
+          }),
+        })
+      );
+
+      // Create series
+      var series = chart.series.push(
+        am5xy.ColumnSeries.new(root, {
+          name: "Series 1",
+          xAxis: xAxis,
+          yAxis: yAxis,
+          valueXField: "count",
+          categoryYField: "text",
+          tooltip: am5.Tooltip.new(root, {
+            pointerOrientation: "left",
+            labelText: "{valueX}",
+          }),
+        })
+      );
+
+      // Configure columns
+      series.columns.template.setAll({
+        cornerRadiusTR: 5,
+        cornerRadiusBR: 5,
+        strokeOpacity: 0,
+      });
+
+      series.columns.template.adapters.add("fill", function (fill, target) {
+        return chart.get("colors").getIndex(series.columns.indexOf(target));
+      });
+
+      series.columns.template.adapters.add("stroke", function (stroke, target) {
+        return chart.get("colors").getIndex(series.columns.indexOf(target));
+      });
+
+      // Add labels for axes
+      xAxis.children.push(
+        am5.Label.new(root, {
+          text: "Articles Count",
+          fontSize: "1em",
+          fontWeight: "600",
+          fill: am5.color(0x555555),
+          x: am5.p50,
+          centerX: am5.p50,
+          centerY: am5.p100,
+          dy: 20,
+        })
+      );
+
+      yAxis.children.unshift(
+        am5.Label.new(root, {
+          text: "Text",
+          fontSize: "1em",
+          fontWeight: "600",
+          fill: am5.color(0x555555),
+          rotation: -90,
+          y: am5.p50,
+          centerY: am5.p50,
+          centerX: am5.p100,
+          dx: -30,
+        })
+      );
+
+      // Fetch articles based on text input
+      async function getArticlesNumber(text) {
+        const response = await fetch(`http://127.0.0.1:5000/articles_containing_specific_text/${text}`);
+        const data = await response.json();
+        return [{ text: text, count: data.length }];
+      }
+
+      // Fetch and set initial data
+      let data = await getArticlesNumber("ايران");
+      yAxis.data.setAll(data);
+      series.data.setAll(data);
+
+      // Event listener for fetching data on button click
+      document.getElementById("buttonFetchArticlesCount").addEventListener("click", async function () {
+        const text = document.getElementById("textInput").value;
+        let data = await getArticlesNumber(text);
+        yAxis.data.setAll(data);
+        series.data.setAll(data);
+      });
+
+      // Set cursor behavior
+      chart.set(
+        "cursor",
+        am5xy.XYCursor.new(root, {
+          behavior: "none",
+          xAxis: xAxis,
+          yAxis: yAxis,
+        })
+      );
+
+      // Animate the chart on load
+      series.appear(1000);
+      chart.appear(1000, 100);
+    });
+  </script>
+
+</body>
+</html>
