@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Articles by Keyword Count</title>
+
+  <!-- amCharts 5 Libraries -->
+  <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+  <style>
+    #chartdiv {
+      width: 100%;
+      height: 500px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Chart container -->
+  <div id="chartdiv"></div>
+
+  <script>
+    am5.ready(async function () {
+      // Create root element
+      var root = am5.Root.new("chartdiv");
+
+      // Set themes
+      root.setThemes([am5themes_Animated.new(root)]);
+
+      // Create chart
+      var chart = root.container.children.push(
+        am5xy.XYChart.new(root, {
+          panX: true,
+          panY: true,
+          wheelX: "panX",
+          wheelY: "zoomX",
+          pinchZoomX: true,
+          paddingLeft: 0,
+          paddingRight: 1,
+        })
+      );
+
+      // Create X-axis (Category)
+      var xAxis = chart.xAxes.push(
+        am5xy.CategoryAxis.new(root, {
+          maxDeviation: 0.3,
+          categoryField: "_id",
+          renderer: am5xy.AxisRendererX.new(root, {}),
+          tooltip: am5.Tooltip.new(root, {}),
+        })
+      );
+
+      // Create Y-axis (Value)
+      var yAxis = chart.yAxes.push(
+        am5xy.ValueAxis.new(root, {
+          renderer: am5xy.AxisRendererY.new(root, {}),
+        })
+      );
+
+      // Create series
+      var series = chart.series.push(
+        am5xy.ColumnSeries.new(root, {
+          xAxis: xAxis,
+          yAxis: yAxis,
+          valueYField: "articles_count",
+          categoryXField: "_id",
+          tooltip: am5.Tooltip.new(root, {
+            labelText: "{categoryX}: [bold]{valueY}[/]",
+          }),
+        })
+      );
+
+      // Configure columns
+      series.columns.template.setAll({
+        cornerRadiusTL: 5,
+        cornerRadiusTR: 5,
+        strokeOpacity: 0,
+      });
+
+      series.columns.template.adapters.add("fill", function (fill, target) {
+        return chart.get("colors").getIndex(series.columns.indexOf(target));
+      });
+
+      series.columns.template.adapters.add("stroke", function (stroke, target) {
+        return chart.get("colors").getIndex(series.columns.indexOf(target));
+      });
+
+      // Add labels for axes
+      xAxis.children.push(
+        am5.Label.new(root, {
+          text: "Keywords Count",
+          fontSize: "1em",
+          fontWeight: "600",
+          fill: am5.color(0x555555),
+          x: am5.p50,
+          centerX: am5.p50,
+          centerY: am5.p100,
+          dy: 20,
+        })
+      );
+
+      yAxis.children.unshift(
+        am5.Label.new(root, {
+          text: "Articles Count",
+          fontSize: "1em",
+          fontWeight: "600",
+          fill: am5.color(0x555555),
+          rotation: -90,
+          y: am5.p50,
+          centerY: am5.p50,
+          centerX: am5.p100,
+          dx: -30,
+        })
+      );
+
+      // Fetch data from the API
+      async function getArticlesByKeywordCount() {
+        const response = await fetch(
+          "http://127.0.0.1:5000/articles_by_keyword_count"
+        );
+        const data = await response.json();
+        return data;
+      }
+
+      // Set data for the chart
+      let data = await getArticlesByKeywordCount();
+      xAxis.data.setAll(data);
+      series.data.setAll(data);
+
+      // Add cursor
+      chart.set("cursor", am5xy.XYCursor.new(root, {}));
+
+      // Animate the chart on load
+      series.appear(1000);
+      chart.appear(1000, 100);
+    });
+  </script>
+
+</body>
+</html>
